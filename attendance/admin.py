@@ -5,8 +5,8 @@ from .models import Student, Course, AttendanceRecord,Teacher
 
 # Define a custom admin class for the Student model
 class StudentAdmin(admin.ModelAdmin):
-    list_display = ('first_name', 'last_name', 'student_id')
-    search_fields = ('first_name', 'last_name', 'student_id')
+    list_display = ('name', 'last_name', 'student_id')
+    search_fields = ('name', 'last_name', 'student_id')
 
 # Define a custom admin class for the Course model
 class CourseAdmin(admin.ModelAdmin):

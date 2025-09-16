@@ -4,6 +4,56 @@ from django.contrib.auth.decorators import login_required
 
 from .models import Course, Student, AttendanceRecord
 import datetime
+from django.contrib import messages
+import pandas as pd
+
+from django.utils import timezone # Make sure to import this
+from collections import defaultdict
+
+@login_required
+def daily_report_view(request):
+    report_date_str = request.GET.get('report_date', timezone.now().strftime('%Y-%m-%d'))
+    report_date = timezone.datetime.strptime(report_date_str, '%Y-%m-%d').date()
+    status_filter = request.GET.get('status', '')
+
+    courses = Course.objects.all() 
+    
+    records_query = AttendanceRecord.objects.filter(
+        course__in=courses,
+        date=report_date
+    ).order_by('student__name'  ) # Order by student name
+
+    if status_filter:
+        records_query = records_query.filter(status=status_filter)
+
+    records = records_query.select_related('student', 'course')
+
+    # --- NEW: Restructure data for collation ---
+    # Create a nested dictionary: {course_name: {student_name: {'status': status, 'periods': [p1, p2]}}}
+    collated_attendance = defaultdict(lambda: defaultdict(lambda: {'periods': [], 'status': ''}))
+
+    for record in records:
+        student_name = f"{record.student.name}  "
+        course_name = record.course.course_name
+        
+        # Store the status and append the period
+        collated_attendance[course_name][student_name]['status'] = record.get_status_display()
+        collated_attendance[course_name][student_name]['periods'].append(record.get_period_display())
+    
+    # Sort the final dictionary for consistent ordering
+    sorted_attendance = {
+        course: dict(sorted(students.items()))
+        for course, students in sorted(collated_attendance.items())
+    }
+
+    context = {
+        'report_date': report_date,
+        'attendance_by_course': sorted_attendance, # Pass the new collated data
+        'has_records': bool(records),
+        'status_choices': AttendanceRecord.STATUS_CHOICES,
+        'current_status': status_filter
+    }
+    return render(request, 'attendance/daily_report.html', context)
 
 @login_required
 def mark_attendance(request, course_id,period):
@@ -98,3 +148,58 @@ def home_view(request):
         'error': error_message
     }
     return render(request, 'attendance/home.html', context)
+@login_required
+def bulk_upload_view(request):
+    if request.method == 'POST':
+        # Check if an Excel file was uploaded
+        if 'excel_file' not in request.FILES:
+            messages.error(request, "لم يتم رفع أي ملف.")
+            return redirect('bulk_upload')
+
+        excel_file = request.FILES['excel_file']
+
+        # Check for valid file extension
+        if not excel_file.name.endswith(('.xlsx', '.xls')):
+            messages.error(request, "تنسيق الملف غير صالح. الرجاء رفع ملف Excel.")
+            return redirect('bulk_upload')
+
+        try:
+            # --- Process Students Sheet ---
+            df_students = pd.read_excel(excel_file, sheet_name='Students')
+            students_created_count = 0
+            for index, row in df_students.iterrows():
+                _, created = Student.objects.update_or_create(
+                    student_id=str(row['student_id']),
+                    defaults={
+                        'name': row['name'],
+                     }
+                )
+                if created:
+                    students_created_count += 1
+
+            # --- Process Courses Sheet ---
+            df_courses = pd.read_excel(excel_file, sheet_name='Courses')
+            courses_created_count = 0
+            for index, row in df_courses.iterrows():
+                course, created = Course.objects.update_or_create(
+                    course_name=row['course_name'],
+                     
+                )
+                if created:
+                    courses_created_count += 1
+
+                # Link students to the course
+                student_ids_str = str(row['student_ids']).split(',')
+                student_ids = [s_id.strip() for s_id in student_ids_str]
+                students_to_add = Student.objects.filter(student_id__in=student_ids)
+                course.students.set(students_to_add)
+
+            messages.success(request, f"تمت المعالجة بنجاح! {students_created_count} طالب جديد، و {courses_created_count} صف جديد.")
+
+        except Exception as e:
+            # Provide a user-friendly error message
+            messages.error(request, f"حدث خطأ أثناء معالجة الملف: {e}. الرجاء التأكد من أن أسماء الأعمدة وأوراق العمل صحيحة.")
+
+        return redirect('bulk_upload')
+
+    return render(request, 'attendance/bulk_upload.html')

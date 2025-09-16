@@ -19,12 +19,18 @@
         .card-footer { background-color: #f8f9fa; padding: 1rem 1.5rem; border-top: 1px solid #dee2e6; text-align: right; }
         .btn { text-decoration: none; color: #fff; background-color: #007bff; padding: 0.6rem 1.2rem; border-radius: 0.25rem; font-weight: 500; }
         .no-courses { background-color: #fff; border: 1px dashed #ccc; padding: 2rem; text-align: center; color: #6c757d; border-radius: 0.5rem;}
+        .header { display: flex; justify-content: space-between; align-items: center; /* ... */ }
+        .btn-upload { text-decoration: none; background-color: #17a2b8; color: white; padding: 0.5rem 1rem; border-radius: 0.25rem; font-weight: bold; margin-left: 1rem; }
+
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>مرحبا , أستاذ. {{ teacher.last_name }}</h1>
+            <h1>مرحبا , أستاذ. {{ teacher.name }}</h1>
+        <a href="{% url 'bulk_upload' %}" class="btn-upload">إضافة طلاب/صفوف</a>
+        <a href="{% url 'daily_report' %}" class="btn-report">التقرير اليومي</a>
+
             <a href="{% url 'logout' %}">تسجيل خروج</a>
         </div>
 
