@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-t9^u0=kjoa-vzor8!7rs23y0kc5ip!8fr4h5s*3q4@iz(pfmmv
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['192.168.8.196','127.0.0.1']
 
 
 # Application definition
@@ -123,4 +123,4 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_REDIRECT_URL = '/attendance/dashboard/'
 LOGIN_URL = 'home' # Use the name of your new home URL
-LOGOUT_REDIRECT_URL = 'home' # Redirect to home after logout
+LOGOUT_REDIRECT_URL = '/' # Redirect to home after logout

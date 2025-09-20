@@ -1,14 +1,110 @@
+from django.http import HttpResponseForbidden
 from django.shortcuts import render,get_object_or_404,redirect
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate, login,logout
 from django.contrib.auth.decorators import login_required
 
-from .models import Course, Student, AttendanceRecord
+from .models import Course, Student, AttendanceRecord, Teacher
 import datetime
 from django.contrib import messages
 import pandas as pd
 
 from django.utils import timezone # Make sure to import this
 from collections import defaultdict
+from django.db.models import Count
+from django.shortcuts import redirect
+
+def logout_view(request):
+    logout(request)
+    return redirect('home') # Redirect to your homepage
+
+@login_required
+def student_report_view(request, student_id):
+    student = get_object_or_404(Student, id=student_id)
+
+    # Date range filtering
+    start_date_str = request.GET.get('start_date')
+    end_date_str = request.GET.get('end_date')
+
+    records = AttendanceRecord.objects.filter(student=student).order_by('-date')
+
+    if start_date_str and end_date_str:
+        start_date = timezone.datetime.strptime(start_date_str, '%Y-%m-%d').date()
+        end_date = timezone.datetime.strptime(end_date_str, '%Y-%m-%d').date()
+        records = records.filter(date__range=[start_date, end_date])
+
+    # Calculate summary statistics
+    stats = records.values('status').annotate(count=Count('status'))
+    summary = {item['status']: item['count'] for item in stats}
+
+    context = {
+        'student': student,
+        'records': records,
+        'summary': {
+            'present': summary.get('present', 0),
+            'absent': summary.get('absent', 0),
+            'late': summary.get('late', 0)
+        },
+        'start_date': start_date_str,
+        'end_date': end_date_str
+    }
+    return render(request, 'attendance/student_report.html', context)
+# attendance/views.py
+from django.contrib.auth.models import User # Make sure User is imported
+
+@login_required
+def bulk_user_add_view(request):
+    # Optional: Restrict this page to superusers
+    if not request.user.is_superuser:
+        return HttpResponseForbidden("You are not authorized to access this page.")
+
+    if request.method == 'POST':
+        if 'excel_file' not in request.FILES:
+            messages.error(request, "لم يتم رفع أي ملف.")
+            return redirect('bulk_user_add')
+
+        excel_file = request.FILES['excel_file']
+        if not excel_file.name.endswith(('.xlsx', '.xls')):
+            messages.error(request, "تنسيق الملف غير صالح. الرجاء رفع ملف Excel.")
+            return redirect('bulk_user_add')
+
+        try:
+            df = pd.read_excel(excel_file)
+            users_created_count = 0
+
+            for index, row in df.iterrows():
+                username = str(row['username'])
+                password = str(row['password'])
+                first_name = str(row['first_name'])
+                last_name = str(row['last_name'])
+
+                # Skip if user already exists
+                if User.objects.filter(username=username).exists():
+                    continue
+
+                # Create the Django User
+                user = User.objects.create_user(
+                    username=username,
+                    password=password,
+                    first_name=first_name,
+                    last_name=last_name
+                )
+
+                # Create the corresponding Teacher profile
+                Teacher.objects.create(
+                    user=user,
+                    first_name=first_name,
+                    last_name=last_name
+                )
+                users_created_count += 1
+
+            messages.success(request, f"تم إنشاء {users_created_count} مستخدم جديد بنجاح.")
+
+        except Exception as e:
+            messages.error(request, f"حدث خطأ أثناء معالجة الملف: {e}. تأكد من تطابق أسماء الأعمدة.")
+
+        return redirect('bulk_user_add')
+
+    return render(request, 'attendance/bulk_user_add.html')
 
 @login_required
 def daily_report_view(request):
@@ -35,8 +131,10 @@ def daily_report_view(request):
     for record in records:
         student_name = f"{record.student.name}  "
         course_name = record.course.course_name
-        
+        student_id = record.student.id # Get student ID
+
         # Store the status and append the period
+        collated_attendance[course_name][student_name]['id'] = student_id
         collated_attendance[course_name][student_name]['status'] = record.get_status_display()
         collated_attendance[course_name][student_name]['periods'].append(record.get_period_display())
     
@@ -148,6 +246,7 @@ def home_view(request):
         'error': error_message
     }
     return render(request, 'attendance/home.html', context)
+
 @login_required
 def bulk_upload_view(request):
     if request.method == 'POST':

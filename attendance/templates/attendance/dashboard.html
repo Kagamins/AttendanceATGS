@@ -28,7 +28,12 @@
     <div class="container">
         <div class="header">
             <h1>مرحبا , أستاذ. {{ teacher.name }}</h1>
+ {% if request.user.is_superuser %}
         <a href="{% url 'bulk_upload' %}" class="btn-upload">إضافة طلاب/صفوف</a>
+             <a href="{% url 'bulk_user_add' %}" class="btn-admin">إضافة مستخدمين</a>
+
+        {% endif %}
+
         <a href="{% url 'daily_report' %}" class="btn-report">التقرير اليومي</a>
 
             <a href="{% url 'logout' %}">تسجيل خروج</a>

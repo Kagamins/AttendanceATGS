@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تقرير الحضور اليومي</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Tajawal', sans-serif; background-color: #f4f7f6; margin: 0; padding: 2em; }
+        .container { max-width: 1000px; margin: 0 auto; background-color: #ffffff; padding: 2.5rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .report-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #007bff; padding-bottom: 1rem; margin-bottom: 2rem; }
+        .report-header h1 { font-size: 2rem; color: #0056b3; margin: 0; }
+        .date-filter form { display: flex; gap: 0.5rem; align-items: center; }
+        .date-filter label { font-weight: 500; }
+        .date-filter input[type="date"] { padding: 0.5rem; border: 1px solid #ccc; border-radius: 5px; }
+        .btn { padding: 0.5rem 1.5rem; border: none; border-radius: 5px; cursor: pointer; color: white; background-color: #007bff; }
+        .course-section { margin-bottom: 2.5rem; }
+        .course-title { font-size: 1.5rem; font-weight: 700; color: #343a40; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid #e9ecef; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 0.8rem; text-align: right; border-bottom: 1px solid #dee2e6; }
+        thead th { background-color: #f8f9fa; font-weight: 500; color: #495057; }
+        .status-present { color: #155724; font-weight: bold; }
+        .status-absent { color: #721c24; background-color: #f8d7da; font-weight: bold; }
+        .status-late { color: #856404; background-color: #fff3cd; }
+        .no-records { text-align: center; padding: 3rem; background-color: #f8f9fa; border-radius: 8px; }
+        .print-btn { background-color: #28a745; margin-left: auto; }
+        @media print {
+            body { background-color: #fff; padding: 0; }
+            .container { box-shadow: none; border: 1px solid #ccc; }
+            .date-filter, .print-btn, .back-btn { display: none; }
+            .report-header { text-align: center; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="report-header">
+            <h1>تقرير الحضور اليومي</h1>
+            <div class="date-filter">
+                <form method="get" action="{% url 'daily_report' %}">
+                    <label for="report_date">اختر التاريخ:</label>
+                    <input type="date" name="report_date" id="report_date" value="{{ report_date|date:'Y-m-d' }}">
+                    <label for="status" style="margin-right: 1rem;">الحالة:</label>
+        <select name="status" id="status">
+            <option value="">الكل</option>
+            {% for value, display_name in status_choices %}
+                <option value="{{ value }}" {% if current_status == value %}selected{% endif %}>
+                    {{ display_name }}
+                </option>
+            {% endfor %}
+        </select>
+                    <button type="submit" class="btn">عرض التقرير</button>
+                </form>
+            </div>
+        </div>
+
+       {% if has_records %}
+    {% for course_name, students in attendance_by_course.items %}
+    <div class="course-section">
+        <h2 class="course-title">{{ course_name }}</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 10%;">#</th>
+
+                    <th style="width: 40%;">اسم الطالب</th>
+                    <th style="width: 20%;">الحالة</th>
+                    <th style="width: 40%;">الحصص المسجلة</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for student_name, data in students.items %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>
+                        <a href="{% url 'student_report' data.id %}">{{ student_name }}</a></td>
+                    <td class="status-{{ data.status|lower }}">{{ data.status }}</td>
+                    <td>{{ data.periods|join:", " }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endfor %}
+{% else %}
+    <div class="no-records">
+        <p>لا توجد سجلات حضور تطابق هذا الفلتر.</p>
+    </div>
+{% endif %}
+        <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+             <a href="{% url 'class_dashboard' %}" class="btn back-btn" style="background-color: #6c757d;">العودة</a>
+             <button onclick="window.print()" class="btn print-btn">طباعة التقرير</button>
+        </div>
+    </div>
+</body>
+</html>

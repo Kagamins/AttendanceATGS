@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إضافة مستخدمين جدد</title>
+    <style>
+        body { font-family: 'Tajawal', sans-serif; background-color: #f9fafb; margin: 0; padding: 2em; }
+        .container { max-width: 800px; margin: 0 auto; background-color: #ffffff; padding: 2rem 3rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); }
+        .header h1 { font-size: 1.8rem; font-weight: 700; color: #1f2937; }
+        .upload-form { border: 2px dashed #d1d5db; border-radius: 8px; padding: 2rem; text-align: center; }
+        .btn { display: inline-block; padding: 0.8rem 2rem; border-radius: 8px; font-size: 1.1rem; font-weight: 700; cursor: pointer; text-decoration: none; }
+        .btn-primary { background-color: #007bff; color: white; border: none; }
+        .btn-secondary { background-color: #6c757d; color: white; margin-top: 1rem; }
+        .messages { list-style: none; padding: 0; margin: 2rem 0; }
+        .messages li { padding: 1rem; border-radius: 8px; margin-bottom: 1rem; }
+        .messages li.success { background-color: #d4edda; color: #155724; }
+        .messages li.error { background-color: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>إضافة مستخدمين (معلمين) بالجملة</h1>
+        </div>
+
+        {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}
+            <li class="{{ message.tags }}">{{ message }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+
+        <form method="post" enctype="multipart/form-data" class="upload-form">
+            {% csrf_token %}
+            <label for="excel_file">اختر ملف Excel يحتوي على بيانات المستخدمين</label>
+            <input type="file" name="excel_file" id="excel_file" accept=".xlsx, .xls" required style="margin: 1rem auto; display: block;">
+            <button type="submit" class="btn btn-primary">رفع وإنشاء الحسابات</button>
+        </form>
+        <a href="{% url 'class_dashboard' %}" class="btn btn-secondary" style="width: 100%; box-sizing: border-box; text-align: center;">العودة للوحة التحكم</a>
+    </div>
+</body>
+</html>

@@ -23,6 +23,7 @@ urlpatterns = [
     path('attendance/', include('attendance.urls')), # Include your app's URLs
     path('accounts/', include('django.contrib.auth.urls')),
     path('', attendance_views.home_view, name='home'),
+    path('logout/', attendance_views.logout_view, name='logout'),
 
 ]
 
