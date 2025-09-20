@@ -2,20 +2,78 @@ from django.http import HttpResponseForbidden
 from django.shortcuts import render,get_object_or_404,redirect
 from django.contrib.auth import authenticate, login,logout
 from django.contrib.auth.decorators import login_required
-
+from django.db.models import Count, Q, F # Add Q and F to imports
+from django.db.models.functions import TruncDate
 from .models import Course, Student, AttendanceRecord, Teacher
 import datetime
 from django.contrib import messages
 import pandas as pd
+import calendar
+from datetime import date
+from collections import defaultdict
+
 
 from django.utils import timezone # Make sure to import this
 from collections import defaultdict
-from django.db.models import Count
 from django.shortcuts import redirect
 
 def logout_view(request):
     logout(request)
     return redirect('home') # Redirect to your homepage
+
+# attendance/views.py
+
+@login_required
+def statistics_view(request):
+    # --- Filter Logic Start ---
+    selected_course_id = request.GET.get('course_id', '')
+    start_date_str = request.GET.get('start_date', '')
+    end_date_str = request.GET.get('end_date', '')
+
+    all_courses = Course.objects.all()
+    records = AttendanceRecord.objects.all()
+
+    if selected_course_id:
+        records = records.filter(course_id=selected_course_id)
+    
+    if start_date_str and end_date_str:
+        start_date = timezone.datetime.strptime(start_date_str, '%Y-%m-%d').date()
+        end_date = timezone.datetime.strptime(end_date_str, '%Y-%m-%d').date()
+        records = records.filter(date__range=[start_date, end_date])
+    # --- Filter Logic End ---
+
+    # 1. Overall Attendance Stats
+    overall_stats = records.values('status').annotate(count=Count('status'))
+    summary = {'present': 0, 'absent': 0, 'late': 0}
+    for item in overall_stats:
+        summary[item['status']] = item['count']
+
+    # 2. Daily Attendance Trend
+    if not (start_date_str and end_date_str):
+        thirty_days_ago = timezone.now().date() - timezone.timedelta(days=30)
+        daily_records = records.filter(date__gte=thirty_days_ago)
+    else:
+        daily_records = records
+
+    # Add .exclude(date__isnull=True) to prevent the error
+    daily_trend = daily_records.exclude(date__isnull=True)\
+        .annotate(day=TruncDate('date'))\
+        .values('day').annotate(
+            present_count=Count('id', filter=Q(status='present')),
+            absent_count=Count('id', filter=Q(status='absent'))
+        ).order_by('day')
+
+    context = {
+        'summary': summary,
+        'daily_trend_labels': [item['day'].strftime('%b %d') for item in daily_trend],
+        'daily_trend_present': [item['present_count'] for item in daily_trend],
+        'daily_trend_absent': [item['absent_count'] for item in daily_trend],
+        'all_courses': all_courses,
+        'selected_course_id': selected_course_id,
+        'start_date': start_date_str,
+        'end_date': end_date_str,
+    }
+    return render(request, 'attendance/statistics.html', context)
 
 @login_required
 def student_report_view(request, student_id):
@@ -198,10 +256,73 @@ def mark_attendance(request, course_id,period):
     
     return render(request, 'attendance/mark_attendance.html', context)
 
+
+@login_required
+def student_lookup_view(request):
+    query = request.GET.get('q', '')
+    students = None
+
+    if query:
+        # Search by first name, last name, or student ID
+        students = Student.objects.filter(
+            Q(name__icontains=query) |
+            Q(student_id__icontains=query)
+        )
+
+    context = {
+        'students': students,
+        'query': query
+    }
+    return render(request, 'attendance/student_lookup.html', context)
+
 @login_required
 def dashboard(request):
  
+    try:
+        teacher = request.user.teacher
+    except Teacher.DoesNotExist:
+            try:
 
+                year = int(request.GET.get('year', date.today().year))
+                month = int(request.GET.get('month', date.today().month))
+                current_month_date = date(year, month, 1)
+            except (ValueError, TypeError):
+        # Default to today if GET params are invalid
+                current_month_date = date.today()
+                year, month = current_month_date.year, current_month_date.month
+            first_day = current_month_date.replace(day=1)
+            last_day_num = calendar.monthrange(year, month)[1]
+            last_day = current_month_date.replace(day=last_day_num)
+
+            # Create a list of all date objects for the current month
+            days_in_month = [first_day + timezone.timedelta(days=d) for d in range(last_day_num)]
+
+            # Calculate previous and next months for navigation links
+            prev_month_date = first_day - timezone.timedelta(days=1)
+            next_month_date = last_day + timezone.timedelta(days=1)
+            course = request.user.classroom.course
+            students = course.students.all().order_by('name', 'student_id')
+            records = AttendanceRecord.objects.filter(
+                student__in=students,
+                date__range=[first_day, last_day]
+                )
+            # Process records into a grid for easy lookup in the template
+            # Structure: {student_id: {date: status}}
+            attendance_grid = defaultdict(dict)
+            for record in records:
+                attendance_grid[record.student_id][record.date] = record
+            
+            context = {
+            'course': course,
+            'students': students,
+            'days_in_month': days_in_month,
+            'attendance_grid': attendance_grid,
+            'current_month_display': first_day.strftime('%B %Y'),
+            'prev_month_url_params': f'?year={prev_month_date.year}&month={prev_month_date.month}',
+            'next_month_url_params': f'?year={next_month_date.year}&month={next_month_date.month}',
+        }
+            return render(request, 'attendance/classroomDashboard.html',context)
+    
     # Handle POST request when a student enrolls or drops a course
     if request.method == 'POST':
         course_id = request.POST.get('course_id')
@@ -211,10 +332,13 @@ def dashboard(request):
 
     # For GET request, display the dashboard
     all_courses = Course.objects.all()
- 
+    total_students_count = Student.objects.filter(courses__in=all_courses).distinct().count()
+
     context = {
         'courses': all_courses,
- 
+         'teacher': teacher,
+        'total_students_count': total_students_count, # Add this to the context
+
     }
     return render(request, 'attendance/dashboard.html', context)
 # attendance/views.py

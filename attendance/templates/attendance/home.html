@@ -7,19 +7,21 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <style>
         :root {
-            --primary-color: #007bff;
-            --background-color: #f0f4f8;
-            --card-background: #ffffff;
-            --text-color: #1f2937;
-            --muted-text: #6b7280;
-            --error-color: #dc3545;
+            --bg-dark: #111827;
+            --bg-light: #1f2937;
+            --card-bg: #374151;
+            --accent-color: #38bdf8;
+            --text-primary: #f9fafb;
+            --text-secondary: #9ca3af;
+            --border-color: #4b5563;
         }
         body {
             font-family: 'Tajawal', sans-serif;
-            background-color: var(--background-color);
-            color: var(--text-color);
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
             margin: 0;
             display: flex;
             justify-content: center;
@@ -30,10 +32,11 @@
             display: flex;
             width: 900px;
             max-width: 95%;
-            background-color: var(--card-background);
+            background-color: var(--bg-light);
             border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
             overflow: hidden;
+            border: 1px solid var(--border-color);
         }
         .login-form {
             padding: 3rem;
@@ -41,7 +44,7 @@
         }
         .welcome-panel {
             flex: 1;
-            background: linear-gradient(135deg, var(--primary-color), #0056b3);
+            background: linear-gradient(135deg, var(--accent-color), #1e40af);
             color: white;
             display: flex;
             flex-direction: column;
@@ -49,6 +52,10 @@
             align-items: center;
             padding: 3rem;
             text-align: center;
+        }
+        .welcome-panel i {
+            font-size: 5rem;
+            margin-bottom: 1.5rem;
         }
         .welcome-panel h1 {
             font-size: 2.5rem;
@@ -65,66 +72,74 @@
             margin-bottom: 0.5rem;
         }
         p.subtitle {
-            color: var(--muted-text);
+            color: var(--text-secondary);
             margin-bottom: 2rem;
         }
         .input-group {
             margin-bottom: 1.5rem;
+            position: relative;
         }
         .input-group label {
             display: block;
             font-weight: 500;
             margin-bottom: 0.5rem;
         }
+        .input-group i {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(25%);
+            color: var(--text-secondary);
+        }
         .input-group input {
             width: 100%;
-            padding: 0.8rem 1rem;
-            border: 1px solid #d1d5db;
+            padding: 0.8rem 1rem 0.8rem 2.5rem;
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
             border-radius: 8px;
             font-family: 'Tajawal', sans-serif;
             font-size: 1rem;
             box-sizing: border-box;
+            transition: border-color 0.2s;
+        }
+        .input-group input:focus {
+            outline: none;
+            border-color: var(--accent-color);
         }
         .login-btn {
             width: 100%;
             padding: 1rem;
             border: none;
             border-radius: 8px;
-            background-color: var(--primary-color);
-            color: white;
+            background-color: var(--accent-color);
+            color: var(--bg-dark);
             font-size: 1.1rem;
             font-weight: 700;
             cursor: pointer;
             transition: background-color 0.2s;
         }
         .login-btn:hover {
-            background-color: #0056b3;
+            background-color: #67cff5;
         }
         .error-message {
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
+            background-color: #450a0a;
+            color: #fecaca;
+            border: 1px solid #991b1b;
             padding: 1rem;
             border-radius: 8px;
             margin-bottom: 1.5rem;
             text-align: center;
         }
         @media (max-width: 768px) {
-            .login-container {
-                flex-direction: column;
-            }
-            .welcome-panel {
-                display: none;
-            }
-            .login-form {
-                padding: 2rem;
-            }
+            .welcome-panel { display: none; }
         }
     </style>
 </head>
 <body>
     <div class="login-container">
         <div class="welcome-panel">
+            <i class="fa-solid fa-fingerprint"></i>
             <h1>نظام الحضور الذكي</h1>
             <p>إدارة الحضور والغياب بكفاءة وسهولة.</p>
         </div>
@@ -137,15 +152,17 @@
                 {{ error }}
             </div>
             {% endif %}
-
+            
             <form method="post">
                 {% csrf_token %}
                 <div class="input-group">
                     <label for="username">اسم المستخدم</label>
+                    <i class="fa-solid fa-user"></i>
                     <input type="text" id="username" name="username" required>
                 </div>
                 <div class="input-group">
                     <label for="password">كلمة المرور</label>
+                    <i class="fa-solid fa-lock"></i>
                     <input type="password" id="password" name="password" required>
                 </div>
                 <button type="submit" class="login-btn">دخول</button>

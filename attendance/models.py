@@ -6,20 +6,19 @@ from django.contrib.auth.models import User
 class Teacher(models.Model):
     teacher_id = models.CharField(max_length=100, unique=True)
     name = models.CharField(max_length=100)
-    first_name = models.CharField(max_length=100)
-    last_name = models.CharField(max_length=100)
+ 
     
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     def __str__(self):
-        return f"{self.first_name} {self.last_name}"
+        return f"{self.name} {self.teacher_id}"
 class Student(models.Model):
     student_id = models.CharField(max_length=100, unique=True)
     name = models.CharField(max_length=100)
-    first_name = models.CharField(max_length=100)
-    last_name = models.CharField(max_length=100)
+ 
 
     def __str__(self):
         return f"{self.name} {self.student_id}"
+
 
 class Course(models.Model):
     course_name = models.CharField(max_length=200)
@@ -27,7 +26,14 @@ class Course(models.Model):
 
     def __str__(self):
         return self.course_name
+class Classroom(models.Model):
+    class_id = models.CharField(max_length=200,unique=True)
+    name = models.CharField(max_length=200)
+    course = models.OneToOneField(Course,on_delete=models.DO_NOTHING)
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
 
+    def __str__(self):
+        return self.name
 class AttendanceRecord(models.Model):
     STATUS_CHOICES = (
         ('present', 'حضور'),

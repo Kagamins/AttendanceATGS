@@ -1,13 +1,15 @@
 # attendance/admin.py
 
 from django.contrib import admin
-from .models import Student, Course, AttendanceRecord,Teacher
+from .models import Student, Course, AttendanceRecord,Teacher,Classroom
 
 # Define a custom admin class for the Student model
 class StudentAdmin(admin.ModelAdmin):
-    list_display = ('name', 'last_name', 'student_id')
-    search_fields = ('name', 'last_name', 'student_id')
-
+    list_display = ('name' , 'student_id')
+    search_fields = ('name' , 'student_id')
+class ClassroomAdmin(admin.ModelAdmin):
+    list_display = ('name' , 'id','course')
+    search_fields = ('name' , 'id','course')
 # Define a custom admin class for the Course model
 class CourseAdmin(admin.ModelAdmin):
     list_display = ('course_name',)
@@ -23,7 +25,7 @@ class AttendanceRecordAdmin(admin.ModelAdmin):
     list_filter = ('date', 'course', 'status')
     
     # Fields to search by
-    search_fields = ('student__first_name', 'student__last_name', 'course__course_name')
+    search_fields = ('student__name',  'course__course_name')
     
     # Default ordering
     ordering = ('-date', 'course')
@@ -40,3 +42,4 @@ admin.site.register(Student, StudentAdmin)
 admin.site.register(Course, CourseAdmin)
 admin.site.register(AttendanceRecord, AttendanceRecordAdmin)
 admin.site.register(Teacher)
+admin.site.register(Classroom,ClassroomAdmin)

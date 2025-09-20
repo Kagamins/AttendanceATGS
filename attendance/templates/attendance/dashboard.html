@@ -1,65 +1,213 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Teacher Dashboard</title>
+    <title>Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: #f8f9fa; margin: 0; padding: 2rem; }
-        .container { max-width: 1200px; margin: 0 auto; }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid #dee2e6; }
-        .header h1 { margin: 0; color: #343a40; }
-        .header a { text-decoration: none; background-color: #6c757d; color: white; padding: 0.5rem 1rem; border-radius: 0.25rem; font-weight: bold; }
-        .course-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
-        .course-card { background-color: #ffffff; border-radius: 0.5rem; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); overflow: hidden; transition: transform 0.2s; }
-        .course-card:hover { transform: translateY(-5px); }
-        .card-body { padding: 1.5rem; }
-        .card-title { font-size: 1.25rem; font-weight: 600; margin: 0 0 0.5rem 0; color: #0056b3; }
-        .card-text { margin: 0 0 1.5rem 0; color: #6c757d; }
-        .card-footer { background-color: #f8f9fa; padding: 1rem 1.5rem; border-top: 1px solid #dee2e6; text-align: right; }
-        .btn { text-decoration: none; color: #fff; background-color: #007bff; padding: 0.6rem 1.2rem; border-radius: 0.25rem; font-weight: 500; }
-        .no-courses { background-color: #fff; border: 1px dashed #ccc; padding: 2rem; text-align: center; color: #6c757d; border-radius: 0.5rem;}
-        .header { display: flex; justify-content: space-between; align-items: center; /* ... */ }
-        .btn-upload { text-decoration: none; background-color: #17a2b8; color: white; padding: 0.5rem 1rem; border-radius: 0.25rem; font-weight: bold; margin-left: 1rem; }
-
+        :root {
+            --bg-dark: #111827;
+            --bg-light: #1f2937;
+            --card-bg: #374151;
+            --accent-color: #38bdf8;
+            --text-primary: #f9fafb;
+            --text-secondary: #9ca3af;
+            --border-color: #4b5563;
+        }
+        body {
+            font-family: 'Tajawal', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 2rem;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .top-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+            background-color: var(--bg-light);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 2rem;
+        }
+        .nav-brand h1 {
+            margin: 0;
+            font-size: 1.5rem;
+        }
+        .nav-brand span {
+            color: var(--accent-color);
+        }
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+        .nav-actions a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 1.1rem;
+            transition: color 0.2s;
+        }
+        .nav-actions a:hover {
+            color: var(--accent-color);
+        }
+        .page-header {
+            margin-bottom: 2rem;
+        }
+        .page-header h2 {
+            font-size: 2rem;
+            margin: 0 0 0.5rem 0;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2.5rem;
+        }
+        .stat-card {
+            background-color: var(--bg-light);
+            padding: 1.5rem;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+        .stat-card i {
+            font-size: 2rem;
+            color: var(--accent-color);
+        }
+        .stat-card .value {
+            font-size: 2.2rem;
+            font-weight: 700;
+        }
+        .stat-card .label {
+            color: var(--text-secondary);
+        }
+        .section-title {
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .course-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1.5rem;
+        }
+        .course-card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: 1px solid var(--border-color);
+        }
+        .course-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(56, 189, 248, 0.1);
+        }
+        .card-body {
+            padding: 1.5rem;
+        }
+        .card-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin: 0 0 0.5rem 0;
+        }
+        .card-text {
+            color: var(--text-secondary);
+            margin: 0 0 1.5rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .card-footer {
+            background-color: var(--bg-light);
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--border-color);
+        }
+        .btn {
+            text-decoration: none;
+            color: var(--bg-dark);
+            background-color: var(--accent-color);
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            font-weight: 700;
+            transition: background-color 0.2s;
+        }
+        .btn:hover {
+            background-color: #67cff5;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>مرحبا , أستاذ. {{ teacher.name }}</h1>
- {% if request.user.is_superuser %}
-        <a href="{% url 'bulk_upload' %}" class="btn-upload">إضافة طلاب/صفوف</a>
-             <a href="{% url 'bulk_user_add' %}" class="btn-admin">إضافة مستخدمين</a>
+        <header class="top-nav">
+            <div class="nav-brand">
+                <h1><span>لوحة تحكم</span> المعلم</h1>
+            </div>
+            <nav class="nav-actions">
+                {% if request.user.is_superuser %}
+                    <a href="{% url 'bulk_upload' %}" title="إضافة طلاب/صفوف"><i class="fa-solid fa-cloud-upload"></i></a>
+                    <a href="{% url 'bulk_user_add' %}" title="إضافة مستخدمين"><i class="fa-solid fa-user-plus"></i></a>
+                    <a href="{% url 'admin:index' %}" title="لوحة التحكم الرئيسية"><i class="fa-solid fa-shield-halved"></i></a>
+                {% endif %}
+                    <a href="{% url 'student_lookup' %}" title="البحث عن طالب"><i class="fa-solid fa-magnifying-glass"></i></a>
 
-        {% endif %}
+                <a href="{% url 'daily_report' %}" title="التقرير اليومي"><i class="fa-solid fa-calendar-day"></i></a>
+                <a href="{% url 'statistics' %}" title="الإحصائيات"><i class="fa-solid fa-chart-pie"></i></a>
+                <a href="{% url 'logout' %}" title="تسجيل الخروج"><i class="fa-solid fa-right-from-bracket"></i></a>
+            </nav>
+        </header>
 
-        <a href="{% url 'daily_report' %}" class="btn-report">التقرير اليومي</a>
+        <main>
+            <div class="page-header">
+                <h2>مرحباً بك مجدداً, أستاذ {{ teacher.first_name }}</h2>
+            </div>
 
-            <a href="{% url 'logout' %}">تسجيل خروج</a>
-        </div>
-
-        <h2>الصفوف</h2>
-        <div class="course-grid">
-            {% for course in courses %}
-                <div class="course-card">
-                    <div class="card-body">
-                        <h3 class="card-title">{{ course.course_name }}</h3>
-                        <p class="card-text">{{ course.students.count }} عدد الطلبة</p>
-                    </div>
-                    <div class="card-footer">
-                        <a href="{% url 'mark_attendance' course.id 1 %}" class="btn">الغياب</a>
- 
-
-
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <i class="fa-solid fa-graduation-cap"></i>
+                    <div>
+                        <div class="value">{{ total_students_count }}</div>
+                        <div class="label">إجمالي الطلاب</div>
                     </div>
                 </div>
-            {% empty %}
-                <div class="no-courses">
-                    <p>You are not assigned to any courses. Please contact an administrator.</p>
+                <div class="stat-card">
+                    <i class="fa-solid fa-chalkboard"></i>
+                    <div>
+                        <div class="value">{{ courses.count }}</div>
+                        <div class="label">صف دراسي</div>
+                    </div>
                 </div>
-            {% endfor %}
-        </div>
+            </div>
+
+            <h3 class="section-title">الصفوف الدراسية</h3>
+            <div class="course-grid">
+                {% for course in courses %}
+                    <div class="course-card">
+                        <div class="card-body">
+                            <h4 class="card-title">{{ course.course_name }}</h4>
+                            <p class="card-text"><i class="fa-solid fa-users"></i> {{ course.students.count }} طالب</p>
+                        </div>
+                        <div class="card-footer">
+                            <a href="{% url 'mark_attendance' course.id 1 %}" class="btn">تسجيل الحضور</a>
+                        </div>
+                    </div>
+                {% empty %}
+                    <p>أنت غير مسجل في أي صف دراسي حالياً.</p>
+                {% endfor %}
+            </div>
+        </main>
     </div>
 </body>
 </html>
