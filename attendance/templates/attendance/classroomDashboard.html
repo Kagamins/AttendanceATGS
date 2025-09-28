@@ -1,0 +1,84 @@
+{% load attendance_extras %}
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة تحكم الصف: {{ course.course_name }}</title>
+    <!-- Use the same fonts and icons as the main dashboard -->
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <style>
+        :root {
+            --bg-dark: #111827; --bg-light: #1f2937; --card-bg: #374151; --accent-color: #38bdf8;
+            --text-primary: #f9fafb; --text-secondary: #9ca3af; --border-color: #4b5563;
+            --status-present: #10b981; --status-absent: #ef4444; --status-late: #f59e0b;
+        }
+        body { font-family: 'Tajawal', sans-serif; background-color: var(--bg-dark); color: var(--text-primary); margin: 0; padding: 2rem; }
+        .container { max-width: 95%; margin: 0 auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+        .header h1 { font-size: 2rem; }
+        .header h1 span { color: var(--accent-color); }
+        .month-nav { display: flex; align-items: center; gap: 1rem; }
+        .month-nav a { color: var(--text-primary); text-decoration: none; font-size: 1.5rem; }
+        .month-nav h2 { font-size: 1.8rem; margin: 0; }
+        .table-container { overflow-x: auto; background-color: var(--bg-light); padding: 1rem; border-radius: 12px; border: 1px solid var(--border-color); }
+        table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        th, td { text-align: center; padding: 0.8rem 0.5rem; border: 1px solid var(--border-color); }
+        thead th { background-color: var(--card-bg); position: sticky; top: 0; z-index: 10; }
+        th:first-child, td:first-child { text-align: right; width: 200px; position: sticky; right: 0; background-color: var(--bg-light); }
+        .status-icon { display: inline-block; width: 24px; height: 24px; line-height: 24px; border-radius: 50%; color: #fff; }
+        .status-present { background-color: var(--status-present); }
+        .status-absent { background-color: var(--status-absent); }
+        .status-late { background-color: var(--status-late); }
+        .status-none { color: var(--text-secondary); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>لوحة تحكم الصف: <span>{{ course.course_name }}</span></h1>
+            <nav class="month-nav">
+                 <h2>{{ current_month_display }}</h2>
+             </nav>
+                                  <a href="{% url 'logout' %}" title="تسجيل الخروج"><i class="fa-solid fa-right-from-bracket"></i></a>
+
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>الطالب</th>
+                        {% for day in days_in_month %}
+                            <th>{{ day|date:"d" }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for student in students %}
+                    <tr>
+                        <td>{{ student.name }}  </td>
+                        {% for day in days_in_month %}
+                            <td>
+                                {% with record=attendance_grid|get_item:student.id|get_item:day %}
+                                    {% if record %}
+                                        <span class="status-icon status-{{ record.status }}" title="{{ record.get_status_display }} - الحصة {{ record.get_period_display }}">
+                                            {% if record.status == 'present' %}/{% elif record.status == 'absent' %}غ{% else %}ت{% endif %}
+                                        </span>
+                                    {% else %}
+                                        <span class="status-none">-</span>
+                                    {% endif %}
+                                {% endwith %}
+                            </td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+     </div>
+
+</body>
+
+</html>

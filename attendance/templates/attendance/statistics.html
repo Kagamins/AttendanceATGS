@@ -1,0 +1,36 @@
+<div class="header">
+    <h1>إحصائيات الحضور والغياب</h1>
+
+    <form method="get" class="filter-form">
+        <select name="course_id">
+            <option value="">كل الصفوف</option>
+            {% for course in all_courses %}
+                <option value="{{ course.id }}" {% if selected_course_id == course.id|stringformat:"s" %}selected{% endif %}>
+                    {{ course.course_name }}
+                </option>
+            {% endfor %}
+        </select>
+        <input type="date" name="start_date" value="{{ start_date }}">
+        <input type="date" name="end_date" value="{{ end_date }}">
+        <button type="submit">فلترة</button>
+    </form>
+</div>
+
+<style>
+    .filter-form {
+        margin-top: 1.5rem;
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        background-color: #fff;
+        padding: 1rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .filter-form select, .filter-form input, .filter-form button {
+        padding: 0.5rem;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-family: 'Tajawal', sans-serif;
+    }
+</style>
