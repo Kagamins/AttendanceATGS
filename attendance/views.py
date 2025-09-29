@@ -132,8 +132,8 @@ def bulk_user_add_view(request):
             for index, row in df.iterrows():
                 username = str(row['username'])
                 password = str(row['password'])
-                first_name = str(row['first_name'])
-                last_name = str(row['last_name'])
+                name = str(row['name'])
+                 
 
                 # Skip if user already exists
                 if User.objects.filter(username=username).exists():
@@ -143,16 +143,16 @@ def bulk_user_add_view(request):
                 user = User.objects.create_user(
                     username=username,
                     password=password,
-                    first_name=first_name,
-                    last_name=last_name
+                    first_name=name,
+ 
                 )
 
                 # Create the corresponding Teacher profile
                 Teacher.objects.create(
                     user=user,
-                    first_name=first_name,
-                    last_name=last_name
-                )
+                    name=name,
+                    teacher_id=username
+                 )
                 users_created_count += 1
 
             messages.success(request, f"تم إنشاء {users_created_count} مستخدم جديد بنجاح.")
