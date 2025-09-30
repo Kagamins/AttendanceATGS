@@ -136,6 +136,11 @@
     .mark-all-btn:hover {
         background-color: #5a6268;
     }
+    .period-nav .btn.completed {
+        background-color: var(--status-present);
+        color: var(--bg-dark);
+        opacity: 0.6;
+    }
     </style>
     <script>
     function markAll(status) {
@@ -158,15 +163,23 @@
     </div>
 
     <div class="period-nav">
-        <a href="{% url 'mark_attendance' course.id '1' %}" class="btn {% if period == '1' %}active{% endif %}">الأولى</a>
-        <a href="{% url 'mark_attendance' course.id '2' %}" class="btn {% if period == '2' %}active{% endif %}">الثانية</a>
-        <a href="{% url 'mark_attendance' course.id '3' %}" class="btn {% if period == '3' %}active{% endif %}">الثالثة</a>
-        <a href="{% url 'mark_attendance' course.id '4' %}" class="btn {% if period == '4' %}active{% endif %}">الرابعة</a>
-        <a href="{% url 'mark_attendance' course.id '5' %}" class="btn {% if period == '5' %}active{% endif %}">الخامسة</a>
-        <a href="{% url 'mark_attendance' course.id '6' %}" class="btn {% if period == '6' %}active{% endif %}">السادسة</a>
-        <a href="{% url 'mark_attendance' course.id '7' %}" class="btn {% if period == '7' %}active{% endif %}">السابعة</a>
+    {% for period_value, period_display in all_periods %}
+        {% if period_value in completed_periods %}
+            {% if request.user.is_superuser %}
+                <a href="{% url 'mark_attendance' course.id period_value %}" 
+                   class="btn completed {% if period == period_value %}active{% endif %}">
+                   {{ period_display }}
+                </a>
+            {% endif %}
+        {% else %}
+            <a href="{% url 'mark_attendance' course.id period_value %}" 
+               class="btn {% if period == period_value %}active{% endif %}">
+               {{ period_display }}
+            </a>
+        {% endif %}
+    {% endfor %}
+</div>
 
-    </div>
 
     <form method="post">
         {% csrf_token %}

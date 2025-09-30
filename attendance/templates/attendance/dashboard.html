@@ -1,3 +1,5 @@
+{% load attendance_extras %}
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -147,6 +149,55 @@
         .btn:hover {
             background-color: #67cff5;
         }
+        .btn-period { 
+        text-decoration: none; 
+        padding: 0.5rem 1rem; 
+        border-radius: 6px; 
+        background-color: var(--card-bg); 
+        color: var(--text-secondary);
+        border: 1px solid var(--border-color);
+        transition: all 0.2s;
+    }
+    .btn-period:hover {
+        border-color: var(--accent-color);
+        color: var(--accent-color);
+    }
+    /* Style for completed periods */
+    .btn-period.completed {
+        background-color: var(--status-present);
+        border-color: var(--status-present);
+        color: var(--bg-dark);
+        opacity: 0.6;
+    }
+     .card-footer {
+        background-color: var(--bg-light);
+        padding: 1rem 1.5rem;
+        border-top: 1px solid var(--border-color);
+        /* Use Flexbox for better spacing and wrapping */
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        justify-content: flex-end;
+    }
+    .btn-period { 
+        text-decoration: none; 
+        padding: 0.5rem 1rem; 
+        border-radius: 6px; 
+        background-color: var(--card-bg); 
+        color: var(--text-secondary);
+        border: 1px solid var(--border-color);
+        transition: all 0.2s;
+    }
+    .btn-period:hover {
+        border-color: var(--accent-color);
+        color: var(--accent-color);
+    }
+    .btn-period.completed {
+        background-color: var(--status-present);
+        border-color: var(--status-present);
+        color: var(--bg-dark);
+        opacity: 0.6; /* Dim it slightly for superuser */
+    }
     </style>
 </head>
 <body>
@@ -160,11 +211,12 @@
                     <a href="{% url 'bulk_upload' %}" title="إضافة طلاب/صفوف"><i class="fa-solid fa-cloud-upload"></i></a>
                     <a href="{% url 'bulk_user_add' %}" title="إضافة مستخدمين"><i class="fa-solid fa-user-plus"></i></a>
                     <a href="{% url 'admin:index' %}" title="لوحة التحكم الرئيسية"><i class="fa-solid fa-shield-halved"></i></a>
+                                    <a href="{% url 'statistics' %}" title="الإحصائيات"><i class="fa-solid fa-chart-pie"></i></a>
+
                 {% endif %}
                     <a href="{% url 'student_lookup' %}" title="البحث عن طالب"><i class="fa-solid fa-magnifying-glass"></i></a>
 
                 <a href="{% url 'daily_report' %}" title="التقرير اليومي"><i class="fa-solid fa-calendar-day"></i></a>
-                <a href="{% url 'statistics' %}" title="الإحصائيات"><i class="fa-solid fa-chart-pie"></i></a>
                 <a href="{% url 'logout' %}" title="تسجيل الخروج"><i class="fa-solid fa-right-from-bracket"></i></a>
             </nav>
         </header>
@@ -199,9 +251,27 @@
                             <h4 class="card-title">{{ course.course_name }}</h4>
                             <p class="card-text"><i class="fa-solid fa-users"></i> {{ course.students.count }} طالب</p>
                         </div>
-                        <div class="card-footer">
-                            <a href="{% url 'mark_attendance' course.id 1 %}" class="btn">تسجيل الحضور</a>
-                        </div>
+<div class="card-footer">
+    {% with periods=course_periods_data|get_item:course.id %}
+        {% for period in periods %}
+            
+            {% if period.is_completed %}
+                {% if request.user.is_superuser %}
+                    <a href="{% url 'mark_attendance' course.id period.value %}" 
+                       class="btn-period completed" title="{{ period.display }}">
+                       {{ period.display }}
+                    </a>
+                {% endif %}
+            {% else %}
+                <a href="{% url 'mark_attendance' course.id period.value %}" 
+                   class="btn-period" title="{{ period.display }}">
+                   {{ period.display }}
+                </a>
+            {% endif %}
+
+        {% endfor %}
+    {% endwith %}
+</div>
                     </div>
                 {% empty %}
                     <p>أنت غير مسجل في أي صف دراسي حالياً.</p>

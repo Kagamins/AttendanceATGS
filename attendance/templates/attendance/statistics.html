@@ -1,36 +1,155 @@
-<div class="header">
-    <h1>إحصائيات الحضور والغياب</h1>
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إحصائيات الحضور</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-dark: #111827;
+            --bg-light: #1f2937;
+            --card-bg: #374151;
+            --accent-color: #38bdf8;
+            --text-primary: #f9fafb;
+            --text-secondary: #9ca3af;
+            --border-color: #4b5563;
+            --status-present: #10b981;
+            --status-absent: #ef4444;
+            --status-late: #f59e0b;
+        }
+        body { font-family: 'Tajawal', sans-serif; background-color: var(--bg-dark); color: var(--text-primary); margin: 0; padding: 2rem; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        .header { text-align: center; margin-bottom: 2rem; }
+        .header h1 { font-size: 2.5rem; margin-bottom: 0.5rem; }
+        .header h1 span { color: var(--accent-color); }
+        .filter-form {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            background-color: var(--bg-light);
+            padding: 1rem;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            margin-top: 1.5rem;
+        }
+        .filter-form select, .filter-form input, .filter-form button {
+            padding: 0.6rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-family: 'Tajawal', sans-serif;
+            background-color: var(--card-bg);
+            color: var(--text-primary);
+        }
+        .filter-form button { background-color: var(--accent-color); color: var(--bg-dark); font-weight: bold; cursor: pointer; }
+        .chart-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 2rem; margin-top: 2rem; }
+        .chart-container { background-color: var(--bg-light); padding: 2rem; border-radius: 12px; border: 1px solid var(--border-color); }
+        .chart-container h3 { margin-top: 0; font-size: 1.5rem; text-align: center; }
+        @media (max-width: 992px) {
+            .chart-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><span>إحصائيات</span> الحضور والغياب</h1>
+            <p style="color: var(--text-secondary);">نظرة عامة على سجلات الحضور لجميع الفصول.</p>
 
-    <form method="get" class="filter-form">
-        <select name="course_id">
-            <option value="">كل الصفوف</option>
-            {% for course in all_courses %}
-                <option value="{{ course.id }}" {% if selected_course_id == course.id|stringformat:"s" %}selected{% endif %}>
-                    {{ course.course_name }}
-                </option>
-            {% endfor %}
-        </select>
-        <input type="date" name="start_date" value="{{ start_date }}">
-        <input type="date" name="end_date" value="{{ end_date }}">
-        <button type="submit">فلترة</button>
-    </form>
-</div>
+            <form method="get" class="filter-form">
+                <select name="course_id">
+                    <option value="">كل الصفوف</option>
+                    {% for course in all_courses %}
+                        <option value="{{ course.id }}" {% if selected_course_id == course.id|stringformat:"s" %}selected{% endif %}>
+                            {{ course.course_name }}
+                        </option>
+                    {% endfor %}
+                </select>
+                <input type="date" name="start_date" value="{{ start_date }}">
+                <input type="date" name="end_date" value="{{ end_date }}">
+                <button type="submit">فلترة</button>
+            </form>
+        </div>
 
-<style>
-    .filter-form {
-        margin-top: 1.5rem;
-        display: flex;
-        justify-content: center;
-        gap: 1rem;
-        background-color: #fff;
-        padding: 1rem;
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    }
-    .filter-form select, .filter-form input, .filter-form button {
-        padding: 0.5rem;
-        border: 1px solid #ccc;
-        border-radius: 5px;
-        font-family: 'Tajawal', sans-serif;
-    }
-</style>
+        <div class="chart-grid">
+            <div class="chart-container">
+                <h3>ملخص الحالات</h3>
+                <canvas id="overallStatsPieChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <h3>توجهات الحضور والغياب</h3>
+                <canvas id="dailyTrendLineChart"></canvas>
+            </div>
+        </div>
+        <a href="{% url 'class_dashboard' %}" style="display: block; text-align: center; margin-top: 2rem; font-size: 1.2rem; color: var(--text-secondary); text-decoration: none;">العودة للوحة التحكم</a>
+    </div>
+
+    <script>
+        // Set default font color for all charts
+        Chart.defaults.color = '{{ "var(--text-secondary)" }}';
+        Chart.defaults.borderColor = '{{ "var(--border-color)" }}';
+
+        // 1. Pie Chart for Overall Stats
+        const pieCtx = document.getElementById('overallStatsPieChart').getContext('2d');
+        new Chart(pieCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['حضور', 'غياب', 'تأخير'],
+                datasets: [{
+                    label: 'عدد السجلات',
+                    data: [{{ summary.present }}, {{ summary.absent }}, {{ summary.late }}],
+                    backgroundColor: [
+                        '{{ "var(--status-present)" }}',
+                        '{{ "var(--status-absent)" }}',
+                        '{{ "var(--status-late)" }}'
+                    ],
+                    borderColor: '{{ "var(--bg-light)" }}',
+                    borderWidth: 3
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'top', labels: { color: '{{ "var(--text-primary)" }}' } }
+                }
+            }
+        });
+
+        // 2. Line Chart for Daily Trend
+        const lineCtx = document.getElementById('dailyTrendLineChart').getContext('2d');
+        new Chart(lineCtx, {
+            type: 'line',
+            data: {
+                labels: {{ daily_trend_labels|safe }},
+                datasets: [{
+                    label: 'حضور',
+                    data: {{ daily_trend_present|safe }},
+                    borderColor: '{{ "var(--status-present)" }}',
+                    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                    fill: true,
+                    tension: 0.4
+                }, {
+                    label: 'غياب',
+                    data: {{ daily_trend_absent|safe }},
+                    borderColor: '{{ "var(--status-absent)" }}',
+                    backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: { beginAtZero: true, grid: { color: '{{ "var(--border-color)" }}' } },
+                    x: { grid: { color: '{{ "var(--border-color)" }}' } }
+                },
+                plugins: {
+                    legend: { labels: { color: '{{ "var(--text-primary)" }}' } }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

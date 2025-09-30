@@ -1,5 +1,7 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -135,8 +137,22 @@
             .welcome-panel { display: none; }
         }
     </style>
+        <link rel="manifest" href="{% static 'manifest.json' %}">
+
 </head>
 <body>
+     <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register("{% static 'serviceworker.js' %}")
+                .then(function(registration) {
+                    console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                }, function(err) {
+                    console.log('ServiceWorker registration failed: ', err);
+                });
+            });
+        }
+    </script>
     <div class="login-container">
         <div class="welcome-panel">
             <i class="fa-solid fa-fingerprint"></i>

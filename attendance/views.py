@@ -11,8 +11,7 @@ import pandas as pd
 import calendar
 from datetime import date
 from collections import defaultdict
-
-
+from django.contrib.auth.models import User # Make sure User is imported
 from django.utils import timezone # Make sure to import this
 from collections import defaultdict
 from django.shortcuts import redirect
@@ -21,8 +20,7 @@ def logout_view(request):
     logout(request)
     return redirect('home') # Redirect to your homepage
 
-# attendance/views.py
-
+ 
 @login_required
 def statistics_view(request):
     # --- Filter Logic Start ---
@@ -65,9 +63,9 @@ def statistics_view(request):
 
     context = {
         'summary': summary,
-        'daily_trend_labels': [item['day'].strftime('%b %d') for item in daily_trend],
-        'daily_trend_present': [item['present_count'] for item in daily_trend],
-        'daily_trend_absent': [item['absent_count'] for item in daily_trend],
+        #'daily_trend_labels': [item['day'].strftime('%b %d') for item in daily_trend],
+        #'daily_trend_present': [item['present_count'] for item in daily_trend],
+        #'daily_trend_absent': [item['absent_count'] for item in daily_trend],
         'all_courses': all_courses,
         'selected_course_id': selected_course_id,
         'start_date': start_date_str,
@@ -107,7 +105,6 @@ def student_report_view(request, student_id):
     }
     return render(request, 'attendance/student_report.html', context)
 # attendance/views.py
-from django.contrib.auth.models import User # Make sure User is imported
 
 @login_required
 def bulk_user_add_view(request):
@@ -230,6 +227,7 @@ def mark_attendance(request, course_id,period):
                     period = period,
                     defaults={'status': status   }
                 )
+        return redirect('class_dashboard')
 
     # Get existing records for today to display them
       # --- START OF CHANGES ---
@@ -239,6 +237,17 @@ def mark_attendance(request, course_id,period):
     
     # 2. Create a dictionary for quick lookups (student_id -> status)
     attendance_status_map = {record.student.id: record.status for record in attendance_records}
+    completed_periods_today = AttendanceRecord.objects.filter(
+        course=course,
+        date=today
+    ).values_list('period', flat=True).distinct()
+
+    attendance_records = AttendanceRecord.objects.filter(course=course, date=today, period=period)
+    attendance_status_map = {record.student.id: record.status for record in attendance_records}
+
+    for student in students:
+        student.current_status = attendance_status_map.get(student.id)
+
 
     # 3. Attach the status directly to each student object
     for student in students:
@@ -249,6 +258,9 @@ def mark_attendance(request, course_id,period):
         'course': course,
         'students': students, # Pass the updated students list
         'period': period,
+        'all_periods': AttendanceRecord.PERIOD_CHOICES, # Pass all possible periods
+        'completed_periods': completed_periods_today, # Pass completed periods list
+
         # 'attendance_today' is no longer needed in the context
     }
     
@@ -322,22 +334,51 @@ def dashboard(request):
             'next_month_url_params': f'?year={next_month_date.year}&month={next_month_date.month}',
         }
             return render(request, 'attendance/classroomDashboard.html',context)
-    
+    today = timezone.now().date()
+
     # Handle POST request when a student enrolls or drops a course
     if request.method == 'POST':
         course_id = request.POST.get('course_id')
         course = get_object_or_404(Course, id=course_id)
 
- 
+    
+    all_courses = Course.objects.all()
+
+    total_students_count = Student.objects.filter(courses__in=all_courses).distinct().count()
+
 
     # For GET request, display the dashboard
     all_courses = Course.objects.all()
     total_students_count = Student.objects.filter(courses__in=all_courses).distinct().count()
+    completed_periods = AttendanceRecord.objects.filter(
+        course__in=all_courses,
+        date=today
+    ).values('course_id', 'period').distinct()
+    
+    # Structure the data for easy lookup in the template: {course_id: [p1, p2]}
+    completed_map = defaultdict(list)
+    for item in completed_periods:
+        completed_map[item['course_id']].append(item['period'])
+    course_periods_data = {}
+    for course in all_courses:
+        periods = []
+        for value, display in AttendanceRecord.PERIOD_CHOICES:
+            periods.append({
+                'value': value,
+                'display': display,
+                'is_completed': value in completed_map.get(course.id, [])
+            })
+        course_periods_data[course.id] = periods
 
     context = {
         'courses': all_courses,
          'teacher': teacher,
         'total_students_count': total_students_count, # Add this to the context
+        'completed_periods_map': completed_map, # Pass the new data to the template
+        'all_periods': AttendanceRecord.PERIOD_CHOICES, # Pass all possible periods
+                'course_periods_data': course_periods_data, # Pass the new structured data
+
+
 
     }
     return render(request, 'attendance/dashboard.html', context)
